@@ -9,12 +9,11 @@ import SwiftUI
 
 struct WheelView: View {
     let sectors: [Sector]
+    @State var rotation: Double = 0
+    @State var isSpinning: Bool = false
+    @State var selectedSector: Sector? = nil
 
-    @State private var rotation: Double = 0
-    @State private var isSpinning: Bool = false
-    @State private var selectedOption: Sector? = nil
-
-    private var anglePerSector: Double {
+    var anglePerSector: Double {
         guard sectors.count > 0 else { return 360.0 }
         return 360.0 / Double(sectors.count)
     }
@@ -22,62 +21,41 @@ struct WheelView: View {
     var body: some View {
         GeometryReader { geometry in
             let center = CGPoint(
-                x: geometry.size.width / 2, y: geometry.size.height / 2)
+                x: geometry.size.width / 2.0,
+                y: geometry.size.height / 2.0
+            )
             let radius = min(geometry.size.width, geometry.size.height) / 2.1
 
             ZStack {
                 Circle().fill(.gray).frame(
-                    width: radius * 2.1, height: radius * 2.1)
+                    width: radius * 2.1,
+                    height: radius * 2.1
+                )
                 ForEach(0..<sectors.count, id: \.self) { index in
-                    let startAngle = Angle(
-                        degrees: anglePerSector * Double(index) - 90)
-                    let endAngle = Angle(
-                        degrees: anglePerSector * Double(index + 1) - 90)
-                    let color = sectors[index].color
-
-                    Path { path in
-                        path.move(to: center)
-                        path.addArc(
-                            center: center, radius: radius,
-                            startAngle: startAngle, endAngle: endAngle,
-                            clockwise: false)
-                        path.closeSubpath()
-                    }.fill(color)
-
-                    let midAngleDegress =
-                        anglePerSector * Double(index) + anglePerSector / 2.0
-                        - 90
-                    let midAngleRadians = Angle(degrees: midAngleDegress)
-                        .radians
-
-                    let textRadius = radius * 0.7
-                    let textX =
-                        center.x + CGFloat(cos(midAngleRadians))
-                        * textRadius
-                    let textY =
-                        center.y + CGFloat(sin(midAngleRadians))
-                        * textRadius
-
-                    Text(sectors[index].text).font(.title).fontWeight(
-                        .semibold
-                    ).foregroundColor(.white).rotationEffect(
-                        Angle(degrees: midAngleDegress + 90)
+                    SectorView(
+                        anglePerSector: anglePerSector,
+                        center: center,
+                        radius: radius,
+                        index: index,
+                        sector: sectors[index]
                     )
-                    .position(CGPoint(x: textX, y: textY))
                 }
             }.rotationEffect(Angle(degrees: rotation)).overlay(
                 ZStack {
                     PointerView(side: radius / 4)
-                    Text(selectedOption?.text ?? "").offset(
+                    Text(selectedSector?.text ?? "").offset(
                         CGSize(width: 0, height: -radius / 2)
                     ).font(.title2).fontWeight(.medium).animation(
-                        .none, value: selectedOption?.text ?? "")
+                        .none,
+                        value: selectedSector?.text ?? ""
+                    )
                 }.offset(
-                    CGSize(width: 0, height: -radius))
+                    CGSize(width: 0, height: -radius)
+                )
 
             ).overlay(
                 Button {
-                    spinWheel()
+                    spin()
                 } label: {
                     ZStack {
                         Circle().fill(.white).frame(width: 100, height: 100)
@@ -89,11 +67,11 @@ struct WheelView: View {
         }
     }
 
-    func spinWheel() {
+    func spin() {
         guard !isSpinning else { return }
 
         isSpinning = true
-        selectedOption = nil
+        selectedSector = nil
 
         let winningIndex = Int.random(in: 0..<sectors.count)
         let targetMiddleAngle =
@@ -103,31 +81,78 @@ struct WheelView: View {
         let randomTargetAngle =
             targetMiddleAngle
             + Double.random(
-                in: (-anglePerSector / 2.1)...(anglePerSector / 2.1))
+                in: (-anglePerSector / 2.1)...(anglePerSector / 2.1)
+            )
         let finalTargetRotation = randomTargetAngle + randomCompleteRotations
 
         let animationDuration = 3.0
         withAnimation(.easeOut(duration: animationDuration)) {
-            self.rotation = finalTargetRotation
+            rotation = finalTargetRotation
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-            self.selectedOption = self.sectors[winningIndex]
-            self.rotation = self.rotation.truncatingRemainder(dividingBy: 360)
-            self.isSpinning = false
+            selectedSector = sectors[winningIndex]
+            rotation = rotation.truncatingRemainder(
+                dividingBy: 360
+            )
+            isSpinning = false
         }
     }
 }
 
+struct SectorView: View {
+    let anglePerSector: Double
+    let center: CGPoint
+    let radius: Double
+    let index: Int
+    let sector: Sector
+
+    var body: some View {
+        let startAngle = Angle(
+            degrees: anglePerSector * Double(index) - 90
+        )
+        let endAngle = Angle(
+            degrees: anglePerSector * Double(index + 1) - 90
+        )
+        let color = sector.color
+
+        Path { path in
+            path.move(to: center)
+            path.addArc(
+                center: center,
+                radius: radius,
+                startAngle: startAngle,
+                endAngle: endAngle,
+                clockwise: false
+            )
+            path.closeSubpath()
+        }.fill(color)
+
+        let midAngleDegress =
+            anglePerSector * Double(index) + anglePerSector / 2.0
+            - 90
+        let midAngleRadians = Angle(degrees: midAngleDegress)
+            .radians
+
+        let textRadius = radius * 0.7
+        let textX =
+            center.x + CGFloat(cos(midAngleRadians))
+            * textRadius
+        let textY =
+            center.y + CGFloat(sin(midAngleRadians))
+            * textRadius
+
+        Text(sector.text).font(.title).fontWeight(
+            .semibold
+        ).foregroundColor(.white).rotationEffect(
+            Angle(degrees: midAngleDegress + 90)
+        )
+        .position(CGPoint(x: textX, y: textY))
+    }
+}
+
 #Preview {
-    WheelView(
-        sectors: [
-            Sector(text: "1", color: .red),
-            Sector(text: "2", color: .blue),
-            Sector(text: "3", color: .green),
-            Sector(text: "4", color: .pink),
-            Sector(text: "5", color: .yellow),
-            Sector(text: "6", color: .purple),
-        ]
-    )
+    WheelView(sectors: [
+        Sector(text: "1", color: .red), Sector(text: "2", color: .green),
+    ])
 }

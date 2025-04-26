@@ -15,21 +15,45 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
-            }.navigationTitle("Settings")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            dismiss()
+                Section {
+                    ForEach(sectors.indices, id: \.self) { index in
+                        HStack {
+                            ColorPicker("", selection: $sectors[index].color)
+                                .labelsHidden()
+                            TextField("", text: $sectors[index].text)
+                            Button {
+                                sectors.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle")
+                            }.disabled(sectors.count < 2)
                         }
                     }
                 }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        sectors.append(Sector(text: "", color: .white))
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        dismiss()
+                        DataStore.shared.save(sectors)
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                    }
+                }
+            }
         }
     }
 }
 
 #Preview {
     @Previewable
-    @State var sectors : [Sector] = [
+    @State var sectors: [Sector] = [
         Sector(text: "123", color: .white)
     ]
     SettingsView(sectors: $sectors)
