@@ -50,11 +50,3 @@ struct SettingsView: View {
         }
     }
 }
-
-#Preview {
-    @Previewable
-    @State var sectors: [Sector] = [
-        Sector(text: "123", color: .white)
-    ]
-    SettingsView(sectors: $sectors)
-}
