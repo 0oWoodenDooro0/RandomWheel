@@ -4,8 +4,8 @@ This is an iOS application developed using SwiftUI, providing a customizable spi
 
 ## ScreenShots
 
-[<img src="./assets/RandomWheelScreenshot1.png">](./assets/RandomWheelScreenshot1.png)
-[<img src="./assets/RandomWheelScreenshot2.png">](./assets/RandomWheelScreenshot2.png)
+<img src="./assets/RandomWheelScreenshot1.png", width="50%">
+<img src="./assets/RandomWheelScreenshot2.png", width="50%">
 
 ## Features
 
